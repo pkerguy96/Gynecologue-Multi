@@ -26,6 +26,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { useSnackbarStore } from "../../zustand/useSnackbarStore";
 import updateItem from "../../hooks/updateItem";
+import usePrint from "../PrintGlobal";
 
 const TIMES = {
   FN: {
@@ -86,6 +87,7 @@ const AddBirthCalculation: React.FC<any> = () => {
     days: 0,
   });
   const queryClient = useQueryClient();
+  const { print, Printable } = usePrint();
   const { showSnackbar } = useSnackbarStore();
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id");
@@ -279,6 +281,7 @@ const AddBirthCalculation: React.FC<any> = () => {
   useEffect(() => {
     handleCalc();
   }, [form]);
+
   if (isLoading) return <LoadingSpinner />;
   return (
     <Paper className="!p-6 w-full flex flex-col gap-4">
@@ -302,7 +305,8 @@ const AddBirthCalculation: React.FC<any> = () => {
           <Box
             className={
               "flex flex-col gap-4 lg:sticky lg:top-24" +
-              (dates ? "" : "  lg:w-1/2 lg:mx-auto")
+              (dates ? "" : "  lg:w-1/2 lg:mx-auto") +
+              (isViewMode ? " hidden" : "")
             }
           >
             <PatientSearchAutocomplete
@@ -360,7 +364,7 @@ const AddBirthCalculation: React.FC<any> = () => {
               <label className="w-max">jour(s)</label>
             </Box>
           </Box>
-          <Box className="lg:col-span-2">
+          <Box className={isViewMode ? "lg:col-span-3" : "lg:col-span-2"}>
             {dates && (
               <Box className="flex flex-col gap-10">
                 <Box className="flex flex-col gap-4">
@@ -552,20 +556,195 @@ const AddBirthCalculation: React.FC<any> = () => {
             )}
           </Box>
         </Box>
+        <Printable
+          page={() =>
+            dates && (
+              <Box className="w-full flex flex-col gap-6">
+                <Box className="grid grid-rows-1 grid-cols-2 gap-4 text-base">
+                  <Box className="w-full flex flex-col gap-px">
+                    <label className="w-full font-bold">Patient</label>
+                    <Box className="w-full">{patient?.name}</Box>
+                  </Box>
+                  <Box className="w-full flex flex-col gap-px">
+                    <label className="w-full font-bold">
+                      Age de la grossesse
+                    </label>
+                    <Box className="w-full">
+                      {`${dates.pregnancyAge.weeks} semaines ${dates.pregnancyAge.days} jours (${dates.pregnancyAge.age} jours)`}
+                    </Box>
+                  </Box>
+                  <Box className="w-full flex flex-col gap-px">
+                    <label className="w-full font-bold">
+                      Date des dernières règles
+                    </label>
+                    <Box className="w-full">{dates.lastPeriod}</Box>
+                  </Box>
+                  <Box className="w-full flex flex-col gap-px">
+                    <label className="w-full font-bold">
+                      Date du début de la grossesse
+                    </label>
+                    <Box className="w-full">{dates.startOfPregnancy}</Box>
+                  </Box>
+                  <Box className="w-full flex flex-col gap-px">
+                    <label className="w-full font-bold">
+                      Date du terme de la grossesse
+                    </label>
+                    <Box className="w-full">{dates.dueDate}</Box>
+                  </Box>
+                  <Box className="w-full flex flex-col gap-px">
+                    <label className="w-full font-bold">
+                      Date post-terme de la grossesse
+                    </label>
+                    <Box className="w-full">{dates.postTermDate}</Box>
+                  </Box>
+                </Box>
+                <Box className="flex flex-col gap-4">
+                  <Box className="flex justify-start">
+                    <Typography
+                      id="modal-modal-title"
+                      component="h2"
+                      className="text-start !text-xl font-bold"
+                    >
+                      Consultations
+                    </Typography>
+                  </Box>
+                  <Box className="grid grid-rows-1 grid-cols-1 gap-1 text-bqse">
+                    {Object.keys(dates.consultations).map((key, index) => (
+                      <Box
+                        key={"Consultations_" + index}
+                        className="w-full flex flex-wrqp gap-2 items-end"
+                      >
+                        <label className="w-max">
+                          {key} consultation avant le
+                        </label>
+                        <Box className="w-max font-bold">
+                          {dates.consultations[key]}
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+                <Box className="flex flex-col gap-4">
+                  <Box className="flex justify-start">
+                    <Typography
+                      id="modal-modal-title"
+                      component="h2"
+                      className="text-start !text-xl font-bold"
+                    >
+                      Echographie
+                    </Typography>
+                  </Box>
+                  <Box className="grid grid-rows-1 grid-cols-1 gap-1 text-base">
+                    {Object.keys(dates.ultrasounds).map((key, index) => (
+                      <Box
+                        key={"Echographie_" + index}
+                        className="w-full flex flex-wrqp gap-2 items-end"
+                      >
+                        <label className="w-max">
+                          {key} échographie au plus tôt
+                        </label>
+                        <Box className="w-max font-bold">
+                          {dates.ultrasounds[key].start}
+                        </Box>
+                        <label className="w-max">et au plus tard</label>
+                        <Box className="w-max font-bold">
+                          {dates.ultrasounds[key].end}
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+                <Box className="flex flex-col gap-4">
+                  <Box className="flex justify-start">
+                    <Typography
+                      id="modal-modal-title"
+                      component="h2"
+                      className="text-start !text-xl font-bold"
+                    >
+                      Dépistages
+                    </Typography>
+                  </Box>
+                  <Box className="grid grid-rows-1 grid-cols-1 gap-1 text-base">
+                    {dates.screenings.extra.map((obj, index) => (
+                      <Box
+                        key={"Dépistages_" + index}
+                        className="w-full flex flex-wrqp gap-2 items-end"
+                      >
+                        <label className="w-max">
+                          HT21 (Trimestre {index + 1}) au plus tôt
+                        </label>
+                        <Box className="w-max font-bold">{obj.start}</Box>
+                        <label className="w-max">et au plus tard</label>
+                        <Box className="w-max font-bold">{obj.end}</Box>
+                      </Box>
+                    ))}
+
+                    <Box className="w-full flex flex-wrqp gap-2 items-end">
+                      <label className="w-max">
+                        Prélèvement vaginal au plus tôt
+                      </label>
+                      <Box className="w-max font-bold">
+                        {dates.screenings.swab.start}
+                      </Box>
+                      <label className="w-max">et au plus tard</label>
+                      <Box className="w-max font-bold">
+                        {dates.screenings.swab.end}
+                      </Box>
+                    </Box>
+
+                    <Box className="w-full flex flex-wrqp gap-2 items-end">
+                      <label className="w-max">Rhophylac au plus tôt</label>
+                      <Box className="w-max font-bold">
+                        {dates.screenings.rhophylac.start}
+                      </Box>
+                      <label className="w-max">et au plus tard</label>
+                      <Box className="w-max font-bold">
+                        {dates.screenings.rhophylac.end}
+                      </Box>
+                    </Box>
+
+                    <Box className="w-full flex flex-wrqp gap-2 items-end">
+                      <label className="w-max">HGPO au plus tôt</label>
+                      <Box className="w-max font-bold">
+                        {dates.screenings.hgpo.start}
+                      </Box>
+                      <label className="w-max">et au plus tard</label>
+                      <Box className="w-max font-bold">
+                        {dates.screenings.hgpo.end}
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            )
+          }
+        />
+
         {!isViewMode &&
-          form.type &&
-          (form.date || form.weeks > 0 || form.days > 0) && (
-            <Box className="flex justify-between flex-row content-center">
-              <Button
-                type="submit"
-                variant="contained"
-                onClick={handleSubmit}
-                className="w-full md:w-max !px-10 !py-3 rounded-lg !ms-auto"
-              >
-                Enregistrer
-              </Button>
-            </Box>
-          )}
+        form.type &&
+        (form.date || form.weeks > 0 || form.days > 0) ? (
+          <Box className="flex justify-between flex-row content-center">
+            <Button
+              type="submit"
+              variant="contained"
+              onClick={handleSubmit}
+              className="w-full md:w-max !px-10 !py-3 rounded-lg !ms-auto"
+            >
+              Enregistrer
+            </Button>
+          </Box>
+        ) : (
+          <Button
+            type="button"
+            variant="contained"
+            onClick={() =>
+              print(() => {}, { page: "A4", margin: "10mm 10mm 10mm 10mm" })
+            }
+            className="w-full md:w-max !px-10 !py-3 rounded-lg !ms-auto"
+          >
+            Print
+          </Button>
+        )}
       </Box>
     </Paper>
   );
